@@ -1,6 +1,6 @@
-import responses from './responses.json';
+import responses from './responses.json'
 
 export {
-	responses,
-	// requests: require('requests.json')
-};
+    responses,
+    // requests: require('requests.json')
+}
