@@ -2,6 +2,9 @@
   "name": "types",
   "main": "index.d.ts",
   "types": "index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
   "dependencies": {
     "zod": "^3.22.2"
   },
