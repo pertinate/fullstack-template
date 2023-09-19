@@ -1,0 +1,13 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/cli" },
+    { "path": "packages/web" }
+  ],
+  "compilerOptions": {
+    "paths": {
+      "@types": ["./packages/types/index.d.ts"]
+    }
+  }
+}

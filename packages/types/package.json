@@ -1,0 +1,7 @@
+{
+  "name": "types",
+  "main": "index.d.ts",
+  "dependencies": {
+    "zod": "^3.22.2"
+  }
+}

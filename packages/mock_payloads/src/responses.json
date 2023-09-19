@@ -1,0 +1,7 @@
+{
+	"GET": {
+		"/": { 
+			"happy_path": { "hello": "asdf" }
+		}
+	}
+}

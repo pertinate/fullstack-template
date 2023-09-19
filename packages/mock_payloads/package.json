@@ -1,0 +1,7 @@
+{
+	"name": "mock_payloads",
+	"main": "build/index.js",
+	"scripts": {
+		"build": "tsc"
+	}
+}
