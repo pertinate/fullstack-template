@@ -13,6 +13,7 @@ function App() {
             .then(res => res.json())
             .then(res => setTexts(res))
     }, [])
+    console.log(typeof (<></>))
     return (
         <>
             <Button>Test</Button>

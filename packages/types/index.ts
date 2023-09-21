@@ -12,13 +12,9 @@ export const TesttSchema = z.object({
 })
 
 export type Testt = z.infer<typeof TesttSchema>
-type t = {
-    tagName: string
-    targets: { target: string | undefined; value: string }[]
-}
 
 export const MetadataSchema = z.object({
-    tagName: z.string(),
+    tagName: z.custom<keyof React.JSX.IntrinsicElements>(),
     targets: z.array(
         z.object({
             target: z.string().nullable(),
@@ -37,30 +33,24 @@ export type Route<T extends string> = {
 }
 
 export const routingFactory = <T extends string>(
-    getMetaHash: Record<T, RouteCallback | undefined>,
+    getMetaHash: Record<T, RouteCallback | React.JSX.Element | undefined>,
 ) => {
-    const routing: Route<T>[] = [
-        {
-            metadata: getMetaHash['/' as keyof typeof getMetaHash], //localhost/
-            path: '/' as keyof typeof getMetaHash,
-        },
-        {
-            metadata: getMetaHash['/about' as keyof typeof getMetaHash], //localhost/about
-            path: '/about' as keyof typeof getMetaHash,
-        },
-
-        {
-            metadata: getMetaHash['/about/me' as keyof typeof getMetaHash], //localhost/about/me
-            path: '/about/me' as keyof typeof getMetaHash,
-        },
-        {
-            metadata:
-                getMetaHash[
-                    '/about/product_number_one' as keyof typeof getMetaHash
-                ],
-            path: '/about/product_number_one' as keyof typeof getMetaHash,
-        },
-    ]
+    const routing = [
+        '/',
+        '/about',
+        '/about/me',
+        '/about/product_number_one',
+    ].map<Route<T>>(entry => ({
+        path: entry as T,
+        metadata:
+            typeof getMetaHash[entry as T] == 'function'
+                ? (getMetaHash[entry as T] as RouteCallback)
+                : undefined,
+        element:
+            typeof getMetaHash[entry as T] == 'object'
+                ? (getMetaHash[entry as T] as React.JSX.Element)
+                : undefined,
+    }))
 
     return routing
 }

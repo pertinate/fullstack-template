@@ -5,7 +5,7 @@ import fs from 'fs'
 import path from 'path'
 import { Metadata, routingFactory } from '@local/types'
 import childProcess from 'child_process'
-import htmlParser, { Node } from 'node-html-parser'
+import htmlParser from 'node-html-parser'
 
 const defaultMeta: Metadata[] = [
     {
