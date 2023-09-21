@@ -7,7 +7,7 @@
   ],
   "compilerOptions": {
     "paths": {
-      "@types": ["./packages/types/index.d.ts"]
+      "@local/types": ["./packages/types/index.ts"]
     }
   }
 }
