@@ -26,31 +26,37 @@ export type Metadata = z.infer<typeof MetadataSchema>
 
 type RouteCallback = (path: string, queryString: string) => Metadata[]
 
-export type Route<T extends string> = {
-    path: T
+const routing = [
+    '/',
+    '/about',
+    '/about/me',
+    '/about/product_number_one',
+] as const
+
+export type Route = {
+    path: (typeof routing)[number]
     metadata?: RouteCallback
     element?: React.JSX.Element
 }
-
-export const routingFactory = <T extends string>(
-    getMetaHash: Record<T, RouteCallback | React.JSX.Element | undefined>,
+export const routingFactory = (
+    getMetaHash: Partial<
+        Record<
+            (typeof routing)[number],
+            RouteCallback | React.JSX.Element | undefined
+        >
+    >,
 ) => {
-    const routing = [
-        '/',
-        '/about',
-        '/about/me',
-        '/about/product_number_one',
-    ].map<Route<T>>(entry => ({
-        path: entry as T,
+    const fixedRouting = routing.map<Route>(entry => ({
+        path: entry,
         metadata:
-            typeof getMetaHash[entry as T] == 'function'
-                ? (getMetaHash[entry as T] as RouteCallback)
+            typeof getMetaHash[entry] == 'function'
+                ? (getMetaHash[entry] as RouteCallback)
                 : undefined,
         element:
-            typeof getMetaHash[entry as T] == 'object'
-                ? (getMetaHash[entry as T] as React.JSX.Element)
+            typeof getMetaHash[entry] == 'object'
+                ? (getMetaHash[entry] as React.JSX.Element)
                 : undefined,
     }))
 
-    return routing
+    return fixedRouting
 }

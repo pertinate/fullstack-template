@@ -1,22 +1,44 @@
-import { useEffect, useState } from 'react'
-import { Test } from '@types'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import { Button } from './components/ui/button'
+import { useEffect, useState } from 'react';
+import { Test } from '@types';
+import reactLogo from './assets/react.svg';
+import viteLogo from '/vite.svg';
+import './App.css';
+import { Button } from './components/ui/button';
+import { signal } from '@preact/signals-react';
+
+function test() {
+    const data = signal<any>(undefined);
+    const isLoading = signal(false);
+
+    isLoading.value = true;
+    new Promise((resolve) =>
+        setTimeout(() => {
+            data.value = { test: 'world' };
+            isLoading.value = false;
+            console.log('hlelo');
+            resolve(undefined);
+        }, 2000),
+    );
+
+    return {
+        data,
+        isLoading,
+    };
+}
 
 function App() {
-    const [count, setCount] = useState(0)
-    const [texts, setTexts] = useState<Test[]>([])
+    const t = test();
+    const [count, setCount] = useState(0);
+    const [texts, setTexts] = useState<Test[]>([]);
     useEffect(() => {
         fetch('/api/')
-            .then(res => res.json())
-            .then(res => setTexts(res))
-    }, [])
-    console.log(typeof (<></>))
+            .then((res) => res.json())
+            .then((res) => setTexts(res));
+    }, []);
     return (
         <>
-            <Button>Test</Button>
+            <Button>Testt</Button>
+            <>{'HELLO' + JSON.stringify(t.data.value)}</>
             <div>
                 <a href='https://vitejs.dev' target='_blank'>
                     <img src={viteLogo} className='logo' alt='Vite logo' />
@@ -33,7 +55,7 @@ function App() {
             <div className='card'>
                 <button
                     onClick={() => {
-                        setCount(count => count + 1)
+                        setCount((count) => count + 1);
                         fetch('/api/', {
                             method: 'POST',
                             body: JSON.stringify({
@@ -46,9 +68,9 @@ function App() {
                             },
                         }).then(() => {
                             fetch('/api/')
-                                .then(res => res.json())
-                                .then(res => setTexts(res))
-                        })
+                                .then((res) => res.json())
+                                .then((res) => setTexts(res));
+                        });
                     }}
                 >
                     count is {count}
@@ -62,7 +84,7 @@ function App() {
                 Click on the Vite and React logos to learn more
             </p>
         </>
-    )
+    );
 }
 
-export default App
+export default App;
