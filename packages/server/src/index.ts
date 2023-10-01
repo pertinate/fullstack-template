@@ -80,16 +80,15 @@ if (process.env.ENVIRONMENT == 'production') {
         prefix: '/public', // optional: default '/'
         constraints: {},
     })
+    fs.watch(path.resolve('../client/src'), undefined, (event, filename) => {
+        console.log(event, filename)
+        childProcess.exec('npm run build', {
+            cwd: '../client',
+        })
+    })
 
     routes.forEach(route => {
         fastify.get(route.path, (req, res) => {
-            console.log(
-                childProcess
-                    .execSync('npm run build', {
-                        cwd: '../client',
-                    })
-                    .toString(),
-            )
             const rawHtml = fs.readFileSync(
                 path.resolve('./../client/dist/index.html'),
             )
