@@ -1,27 +1,19 @@
 import './App.css';
-import {
-    BrowserRouter,
-    Route,
-    RouteObject,
-    RouterProvider,
-    Routes,
-    createBrowserRouter,
-} from 'react-router-dom';
+import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import Home from './pages/home';
-import { routingFactory } from '@types';
+import { routingFactory } from '@local/types';
 
-const Test = () => {
-    console.log('lel');
-    return <>testttt</>;
-};
-
-const router = createBrowserRouter(
-    routingFactory({
+const router = createBrowserRouter([
+    ...routingFactory({
         '/': <Home />,
         '/about/me': <>test</>,
         '/about/product_number_one': <></>,
     }),
-);
+    {
+        path: '/test',
+        element: <>hello world</>,
+    },
+]);
 
 function Router() {
     return <RouterProvider router={router} />;

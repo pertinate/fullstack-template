@@ -1,43 +1,43 @@
-import { useEffect, useState } from 'react';
-import { Test } from '@types';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
-import './App.css';
-import { Button } from './components/ui/button';
-import { signal } from '@preact/signals-react';
+// import { useEffect, useState } from 'react';
+// import reactLogo from './assets/react.svg';
+// import { Test } from '@types';
+// import viteLogo from '/vite.svg';
+// import './App.css';
+// import { Button } from './components/ui/button';
+// import { signal } from '@preact/signals-react';
 
-function test() {
-    const data = signal<any>(undefined);
-    const isLoading = signal(false);
+// function test() {
+//     const data = signal<any>(undefined);
+//     const isLoading = signal(false);
 
-    isLoading.value = true;
-    new Promise((resolve) =>
-        setTimeout(() => {
-            data.value = { test: 'world' };
-            isLoading.value = false;
-            console.log('hlelo');
-            resolve(undefined);
-        }, 2000),
-    );
+//     isLoading.value = true;
+//     new Promise((resolve) =>
+//         setTimeout(() => {
+//             data.value = { test: 'world' };
+//             isLoading.value = false;
+//             console.log('hlelo');
+//             resolve(undefined);
+//         }, 2000),
+//     );
 
-    return {
-        data,
-        isLoading,
-    };
-}
+//     return {
+//         data,
+//         isLoading,
+//     };
+// }
 
 function App() {
-    const t = test();
-    const [count, setCount] = useState(0);
-    const [texts, setTexts] = useState<Test[]>([]);
-    useEffect(() => {
-        fetch('/api/')
-            .then((res) => res.json())
-            .then((res) => setTexts(res));
-    }, []);
+    // const t = test();
+    // const [count, setCount] = useState(0);
+    // const [texts, setTexts] = useState<Test[]>([]);
+    // useEffect(() => {
+    //     fetch('/api/')
+    //         .then((res) => res.json())
+    //         .then((res) => setTexts(res));
+    // }, []);
     return (
         <>
-            <Button>Testt</Button>
+            {/* <Button>Testt</Button>
             <>{'HELLO' + JSON.stringify(t.data.value)}</>
             <div>
                 <a href='https://vitejs.dev' target='_blank'>
@@ -82,7 +82,7 @@ function App() {
             </div>
             <p className='read-the-docs'>
                 Click on the Vite and React logos to learn more
-            </p>
+            </p> */}
         </>
     );
 }

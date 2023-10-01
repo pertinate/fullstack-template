@@ -81,10 +81,15 @@ if (process.env.ENVIRONMENT == 'production') {
         constraints: {},
     })
 
-    childProcess.exec('npm run build', { cwd: '../client' })
-
     routes.forEach(route => {
         fastify.get(route.path, (req, res) => {
+            console.log(
+                childProcess
+                    .execSync('npm run build', {
+                        cwd: '../client',
+                    })
+                    .toString(),
+            )
             const rawHtml = fs.readFileSync(
                 path.resolve('./../client/dist/index.html'),
             )
@@ -116,6 +121,27 @@ if (process.env.ENVIRONMENT == 'production') {
         })
     })
 }
+
+fastify.get('/*', (req, res) => {
+    const rawHtml = fs.readFileSync(path.resolve('./../client/dist/index.html'))
+    const html = htmlParser.parse(rawHtml.toString())
+    const htmlHead = html.querySelector('head')
+    defaultMeta.forEach(metadata => {
+        const idx = metadata.targets.findIndex(data => data.target == null)
+        htmlHead?.appendChild(
+            htmlParser.parse(
+                `<${metadata.tagName} ${metadata.targets
+                    .filter((_, index) => index != idx)
+                    .map(entry => `${entry.target}="${entry.value}"`)
+                    .join(' ')}>${
+                    idx > -1 ? metadata.targets[idx].value : ''
+                }</${metadata.tagName}>`,
+            ),
+        )
+    })
+    res.header('Content-Type', 'text/html')
+    return html.toString()
+})
 // Declare a route
 
 // Run the server!

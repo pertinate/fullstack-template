@@ -1,7 +1,5 @@
-import './App.css'
-
 function Home() {
-    return <></>
+    return <>twdtasgdf</>;
 }
 
-export default Home
+export default Home;
