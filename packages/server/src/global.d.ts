@@ -1,6 +1,6 @@
 declare namespace NodeJS {
     interface ProcessEnv {
-        ENVIRONMENT: string
+        ENVIRONMENT: 'development' | 'stage' | 'production'
         DATABASE_URL: string
     }
 }

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type React from 'react'
 
 export type Test = string
 
@@ -24,13 +25,21 @@ export const MetadataSchema = z.object({
 })
 export type Metadata = z.infer<typeof MetadataSchema>
 
-type RouteCallback = (path: string, queryString: string) => Metadata[]
+type RouteCallback = (
+    path: string,
+    queryString: {
+        params?: { [key: string]: any | undefined }
+        query?: { [key: string]: any | undefined }
+        headers?: { [key: string]: any | undefined }
+    },
+) => Metadata[]
 
 const routing = [
     '/',
     '/about',
     '/about/me',
     '/about/product_number_one',
+    '/products/:productId',
 ] as const
 
 export type Route = {

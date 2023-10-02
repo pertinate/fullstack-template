@@ -20,17 +20,40 @@ const defaultMeta: Metadata[] = [
 ]
 
 export const routes = routingFactory({
-    '/': () => defaultMeta,
-    '/about': () => defaultMeta,
-    '/about/me': () => defaultMeta,
-    '/about/product_number_one': (path, queryString) => {
+    '/about/product_number_one': (path, routeData) => {
         return [
             {
                 tagName: 'title',
                 targets: [
                     {
                         target: null,
-                        value: 'Product Number One',
+                        value: `Product Number One`,
+                    },
+                ],
+            },
+            {
+                tagName: 'meta',
+                targets: [
+                    {
+                        target: 'property',
+                        value: 'og:title',
+                    },
+                    {
+                        target: 'content',
+                        value: 'Custom SEO Title',
+                    },
+                ],
+            },
+        ]
+    },
+    '/products/:productId': (path, routeData) => {
+        return [
+            {
+                tagName: 'title',
+                targets: [
+                    {
+                        target: null,
+                        value: `Product: ${routeData.params?.productId} Q:${routeData.query?.q}`,
                     },
                 ],
             },
@@ -73,56 +96,89 @@ fastify.register(
     { prefix: '/api' },
 )
 
-if (process.env.ENVIRONMENT == 'production') {
-} else {
-    fastify.register(fastifyStatic, {
-        root: path.resolve('./../client/dist'),
-        prefix: '/public', // optional: default '/'
-        constraints: {},
-    })
-    fs.watch(path.resolve('../client/src'), undefined, (event, filename) => {
+if (process.env.ENVIRONMENT == 'development') {
+    fs.watch(path.resolve(`./../client/src`), undefined, (event, filename) => {
         console.log(event, filename)
         childProcess.exec('npm run build', {
-            cwd: '../client',
-        })
-    })
-
-    routes.forEach(route => {
-        fastify.get(route.path, (req, res) => {
-            const rawHtml = fs.readFileSync(
-                path.resolve('./../client/dist/index.html'),
-            )
-            const html = htmlParser.parse(rawHtml.toString())
-            const htmlHead = html.querySelector('head')
-            const meta = route.metadata?.(req.routerPath, '')
-
-            if (meta) {
-                meta.forEach(metadata => {
-                    const idx = metadata.targets.findIndex(
-                        data => data.target == null,
-                    )
-                    htmlHead?.appendChild(
-                        htmlParser.parse(
-                            `<${metadata.tagName} ${metadata.targets
-                                .filter((_, index) => index != idx)
-                                .map(
-                                    entry => `${entry.target}="${entry.value}"`,
-                                )
-                                .join(' ')}>${
-                                idx > -1 ? metadata.targets[idx].value : ''
-                            }</${metadata.tagName}>`,
-                        ),
-                    )
-                })
-            }
-            res.header('Content-Type', 'text/html')
-            return html.toString()
+            cwd: './../client',
         })
     })
 }
 
-fastify.get('/*', (req, res) => {
-    const rawHtml = fs.readFileSync(path.resolve('./../client/dist/index.html'))
+fastify.register(fastifyStatic, {
+    root: path.resolve('./../client/dist'), //update so production is covered
+    prefix: '/', // optional: default '/'
+    constraints: {},
+})
+
+const getHtmlFile = () => {
+    try {
+        return fs.readFileSync(path.resolve('./../client/dist/index.html'))
+    } catch {
+        return fs.readFileSync(path.resolve('./index.html')) //will need to change based on production build structure
+    }
+}
+
+routes.forEach(route => {
+    fastify.get(route.path, (req, res) => {
+        console.log(
+            `loop: ${route.path} ${JSON.stringify(req.params)} ${JSON.stringify(
+                req.query,
+            )}`,
+        )
+        const rawHtml = getHtmlFile()
+        const html = htmlParser.parse(rawHtml.toString())
+        const htmlHead = html.querySelector('head')
+        const meta = route.metadata?.(req.routerPath, {
+            params: req.params || {},
+            query: req.query || {},
+            headers: req.headers || {},
+        })
+
+        if (meta) {
+            meta.forEach(metadata => {
+                const idx = metadata.targets.findIndex(
+                    data => data.target == null,
+                )
+                htmlHead?.appendChild(
+                    htmlParser.parse(
+                        `<${metadata.tagName} ${metadata.targets
+                            .filter((_, index) => index != idx)
+                            .map(entry => `${entry.target}="${entry.value}"`)
+                            .join(' ')}>${
+                            idx > -1 ? metadata.targets[idx].value : ''
+                        }</${metadata.tagName}>`,
+                    ),
+                )
+            })
+        }
+        res.header('Content-Type', 'text/html')
+        return html.toString()
+    })
+})
+fastify.setNotFoundHandler((request, reply) => {
+    const rawHtml = getHtmlFile()
+    const html = htmlParser.parse(rawHtml.toString())
+    const htmlHead = html.querySelector('head')
+    defaultMeta.forEach(metadata => {
+        const idx = metadata.targets.findIndex(data => data.target == null)
+        htmlHead?.appendChild(
+            htmlParser.parse(
+                `<${metadata.tagName} ${metadata.targets
+                    .filter((_, index) => index != idx)
+                    .map(entry => `${entry.target}="${entry.value}"`)
+                    .join(' ')}>${
+                    idx > -1 ? metadata.targets[idx].value : ''
+                }</${metadata.tagName}>`,
+            ),
+        )
+    })
+    reply.header('Content-Type', 'text/html')
+    reply.status(200).send(html.toString())
+})
+fastify.get('/sdfg', (req, res) => {
+    console.log(`catch: ${req.url}`)
+    const rawHtml = getHtmlFile()
     const html = htmlParser.parse(rawHtml.toString())
     const htmlHead = html.querySelector('head')
     defaultMeta.forEach(metadata => {
