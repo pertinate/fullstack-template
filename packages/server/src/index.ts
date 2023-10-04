@@ -125,7 +125,13 @@ fastify.register(
         fastify.get('/data_example', (req, reply) => {
             console.log('>>>test')
             try {
-                return JSON.stringify({ hello: 'world' } as APIResponseExample)
+                new Promise(resolve => setTimeout(resolve, 2000)).then(() => {
+                    reply.status(200).send(
+                        JSON.stringify({
+                            hello: 'world',
+                        } as APIResponseExample),
+                    )
+                })
             } catch (error) {
                 console.error(error)
                 reply.code(500).send()

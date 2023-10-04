@@ -5,11 +5,9 @@ import { APIResponseExample } from '@local/types';
 
 type APIState<T> = {
     data: T | undefined;
-    staleAfterMs?: number;
-    staleAtMs?: number;
     loading: boolean;
-    error: boolean;
-    refetchMs?: number;
+    error: Error | null;
+    ttl?: number;
     interval?: NodeJS.Timeout;
 };
 
@@ -22,13 +20,13 @@ export type Actions = {
     get: (url: keyof urlOnly) => urlOnly[keyof urlOnly]['data'];
 };
 
-export type TestStore = State & Actions;
+export type APIStore = State & Actions;
 
-type urlOnly = Omit<TestStore, 'fetchData' | 'get'>;
+type urlOnly = Omit<APIStore, keyof Actions>;
 
 const actions: (
-    set: Setter<TestStore>,
-    get: Getter<TestStore>,
+    set: Setter<APIStore>,
+    get: Getter<APIStore>,
     api: StoreApi<StoreState>,
     path: ReadonlyArray<string>,
 ) => Actions = (set, get, api): Actions => {
@@ -43,25 +41,21 @@ const actions: (
                         set({
                             [url]: {
                                 ...storeData,
-                                staleAtMs: storeData.staleAfterMs
-                                    ? new Date().valueOf() +
-                                      storeData.staleAfterMs
-                                    : undefined,
                                 data: json,
                                 loading: false,
-                                error: false,
+                                error: null,
                             },
                         });
                     });
                 })
-                .catch(() => {
+                .catch((error: Error) => {
                     const store = get();
                     const storeData = store[url as keyof urlOnly];
                     set({
                         [url]: {
                             ...storeData,
                             loading: false,
-                            error: true,
+                            error,
                         },
                     });
                 });
@@ -70,25 +64,23 @@ const actions: (
             const store = get();
             const storeData = store[url];
 
-            if (
-                ((storeData.staleAfterMs &&
-                    new Date().valueOf() > storeData.staleAfterMs) ||
-                    storeData.staleAfterMs == 0 ||
-                    !storeData.data) &&
-                !storeData.loading
-            ) {
-                const test = get()[url];
+            if (!storeData.data && !storeData.loading) {
+                const storeData = get()[url];
 
                 set({
                     [url]: {
-                        ...test,
+                        ...storeData,
                         loading: true,
-                        interval: storeData.refetchMs
-                            ? setInterval(
-                                  () => get().fetchData(url),
-                                  storeData.refetchMs,
-                              )
-                            : undefined,
+                        interval:
+                            storeData.ttl === undefined ||
+                            storeData.ttl === null
+                                ? undefined
+                                : !storeData.interval
+                                ? setInterval(
+                                      () => get().fetchData(url),
+                                      storeData.ttl,
+                                  )
+                                : storeData.interval,
                     },
                 });
                 get().fetchData(url);
@@ -98,16 +90,18 @@ const actions: (
     };
 };
 
-const slice: Lens<TestStore, StoreState> = (set, get, api, path) => {
+const defaultValue = {
+    data: undefined,
+    ttl: 60000,
+    loading: false,
+    error: null,
+};
+
+const slice: Lens<APIStore, StoreState> = (set, get, api, path) => {
     const apiRoutes: State = {
-        '/api/data_example': {
-            data: undefined,
-            staleAfterMs: 60000,
-            loading: false,
-            error: false,
-        },
+        '/api/data_example': defaultValue,
     };
-    //look at the possibility of immediately fetching the data?
+
     return {
         ...apiRoutes,
         ...actions(set, get, api, path),

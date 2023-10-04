@@ -1,17 +1,17 @@
 import { create } from 'zustand';
 import { withLenses } from '@dhmk/zustand-lens';
 import exampleSlice, { ExampleStore } from './example.slice';
-import testSlice, { TestStore } from './test.slice';
+import apiSlice, { APIStore } from './api.slice';
 
 export type StoreState = {
     example: ExampleStore;
-    test: TestStore;
+    api: APIStore;
 };
 
 const store = create<StoreState>(
     withLenses({
         example: exampleSlice,
-        test: testSlice,
+        api: apiSlice,
     }),
 );
 
