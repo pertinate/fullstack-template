@@ -83,6 +83,12 @@ const actions: (
                     [url]: {
                         ...test,
                         loading: true,
+                        interval: storeData.refetchMs
+                            ? setInterval(
+                                  () => get().fetchData(url),
+                                  storeData.refetchMs,
+                              )
+                            : undefined,
                     },
                 });
                 get().fetchData(url);
@@ -101,6 +107,7 @@ const slice: Lens<TestStore, StoreState> = (set, get, api, path) => {
             error: false,
         },
     };
+    //look at the possibility of immediately fetching the data?
     return {
         ...apiRoutes,
         ...actions(set, get, api, path),
