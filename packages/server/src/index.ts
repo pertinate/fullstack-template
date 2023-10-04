@@ -3,7 +3,7 @@ import Fastify from 'fastify'
 import fastifyStatic from '@fastify/static'
 import fs from 'fs'
 import path from 'path'
-import { Metadata, routingFactory } from '@local/types'
+import { APIResponseExample, Metadata, routingFactory } from '@local/types'
 import childProcess from 'child_process'
 import htmlParser from 'node-html-parser'
 
@@ -125,7 +125,7 @@ fastify.register(
         fastify.get('/data_example', (req, reply) => {
             console.log('>>>test')
             try {
-                return JSON.stringify({ hello: 'world' })
+                return JSON.stringify({ hello: 'world' } as APIResponseExample)
             } catch (error) {
                 console.error(error)
                 reply.code(500).send()

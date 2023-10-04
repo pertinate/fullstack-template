@@ -1,23 +1,30 @@
 import { Getter, Lens, lens, Setter } from '@dhmk/zustand-lens';
 import { StoreApi } from 'zustand';
 import { StoreState } from './store';
+import { APIResponseExample } from '@local/types';
+
+type APIState<T> = {
+    data: T | undefined;
+    staleAfterMs?: number;
+    staleAtMs?: number;
+    loading: boolean;
+    error: boolean;
+    refetchMs?: number;
+    interval?: NodeJS.Timeout;
+};
 
 type State = {
-    '/api/data_example': {
-        data: unknown | undefined;
-        staleAt: number;
-        loading: boolean;
-        error: boolean;
-        // getData: unknown | undefined;
-    };
+    '/api/data_example': APIState<APIResponseExample>;
 };
 
 export type Actions = {
-    fetchData: (url: string) => void;
-    get: (url: string) => unknown | undefined;
+    fetchData: (url: keyof urlOnly) => void;
+    get: (url: keyof urlOnly) => urlOnly[keyof urlOnly]['data'];
 };
 
 export type TestStore = State & Actions;
+
+type urlOnly = Omit<TestStore, 'fetchData' | 'get'>;
 
 const actions: (
     set: Setter<TestStore>,
@@ -26,19 +33,20 @@ const actions: (
     path: ReadonlyArray<string>,
 ) => Actions = (set, get, api): Actions => {
     return {
-        fetchData: (url: string) => {
-            // set({ msg });
+        fetchData: (url: keyof urlOnly) => {
             fetch(url)
                 .then((data) => {
                     const store = get();
-                    type urlOnly = Omit<typeof store, 'fetchData'>;
                     const storeData = store[url as keyof urlOnly];
-                    //trigger update to this.data that would re-render whatever is using it
+
                     data.json().then((json) => {
                         set({
                             [url]: {
                                 ...storeData,
-                                staleAt: new Date().valueOf() + 60000,
+                                staleAtMs: storeData.staleAfterMs
+                                    ? new Date().valueOf() +
+                                      storeData.staleAfterMs
+                                    : undefined,
                                 data: json,
                                 loading: false,
                                 error: false,
@@ -48,7 +56,6 @@ const actions: (
                 })
                 .catch(() => {
                     const store = get();
-                    type urlOnly = Omit<typeof store, 'fetchData'>;
                     const storeData = store[url as keyof urlOnly];
                     set({
                         [url]: {
@@ -59,25 +66,26 @@ const actions: (
                     });
                 });
         },
-        get: (url: string) => {
+        get: (url) => {
             const store = get();
-            type urlOnly = Omit<typeof store, 'fetchData' | 'get'>;
-            const storeData = store[url as keyof urlOnly];
-            console.log('getting data');
+            const storeData = store[url];
+
             if (
-                (new Date().valueOf() > storeData.staleAt ||
-                    storeData.staleAt == 0) &&
+                ((storeData.staleAfterMs &&
+                    new Date().valueOf() > storeData.staleAfterMs) ||
+                    storeData.staleAfterMs == 0 ||
+                    !storeData.data) &&
                 !storeData.loading
             ) {
-                const test = get()['/api/data_example'];
+                const test = get()[url];
 
                 set({
-                    '/api/data_example': {
+                    [url]: {
                         ...test,
                         loading: true,
                     },
                 });
-                get().fetchData('/api/data_example');
+                get().fetchData(url);
             }
             return storeData.data;
         },
@@ -88,12 +96,9 @@ const slice: Lens<TestStore, StoreState> = (set, get, api, path) => {
     const apiRoutes: State = {
         '/api/data_example': {
             data: undefined,
-            staleAt: 0,
+            staleAfterMs: 60000,
             loading: false,
             error: false,
-            // get getData() {
-
-            // },
         },
     };
     return {

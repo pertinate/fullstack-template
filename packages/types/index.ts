@@ -14,6 +14,10 @@ export const TesttSchema = z.object({
 
 export type Testt = z.infer<typeof TesttSchema>
 
+export type APIResponseExample = {
+    hello: 'world'
+}
+
 export const MetadataSchema = z.object({
     tagName: z.custom<keyof React.JSX.IntrinsicElements>(),
     targets: z.array(
