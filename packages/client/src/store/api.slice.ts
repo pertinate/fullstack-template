@@ -1,7 +1,11 @@
 import { Getter, Lens, lens, Setter } from '@dhmk/zustand-lens';
 import { StoreApi } from 'zustand';
 import { StoreState } from './store';
-import { APIResponseExample } from '@local/types';
+import {
+    APIResponseExample,
+    APIRoutes,
+    getFrontendAPIRoute,
+} from '@local/types';
 
 type APIState<T> = {
     data: T | undefined;
@@ -11,13 +15,24 @@ type APIState<T> = {
     interval?: NodeJS.Timeout;
 };
 
-type State = {
-    '/api/data_example': APIState<APIResponseExample>;
+const defaultValue = {
+    data: undefined,
+    ttl: 60000,
+    loading: false,
+    error: null,
 };
 
+const apiRoutes = {
+    [APIRoutes['/api/data']]: defaultValue as APIState<APIResponseExample>,
+    [APIRoutes['/api/data/:myParamOne/:myParamTwo?/:myParamThree']]:
+        defaultValue as APIState<APIResponseExample>,
+};
+
+type State = typeof apiRoutes;
+
 export type Actions = {
-    fetchData: (url: keyof urlOnly) => void;
-    get: (url: keyof urlOnly) => urlOnly[keyof urlOnly]['data'];
+    fetchData: (url: APIRoutes) => void;
+    get: (url: APIRoutes) => urlOnly[keyof urlOnly]['data'];
 };
 
 export type APIStore = State & Actions;
@@ -31,8 +46,16 @@ const actions: (
     path: ReadonlyArray<string>,
 ) => Actions = (set, get, api): Actions => {
     return {
-        fetchData: (url: keyof urlOnly) => {
-            fetch(url)
+        fetchData: (url) => {
+            const apiRoute = getFrontendAPIRoute(url)(
+                {
+                    myParamOne: '',
+                    myParamTwo: '',
+                },
+                {},
+            );
+
+            fetch(apiRoute.url)
                 .then((data) => {
                     const store = get();
                     const storeData = store[url as keyof urlOnly];
@@ -62,7 +85,8 @@ const actions: (
         },
         get: (url) => {
             const store = get();
-            const storeData = store[url];
+            const key = url;
+            const storeData = store[key];
 
             if (!storeData.data && !storeData.loading) {
                 const storeData = get()[url];
@@ -90,18 +114,7 @@ const actions: (
     };
 };
 
-const defaultValue = {
-    data: undefined,
-    ttl: 60000,
-    loading: false,
-    error: null,
-};
-
 const slice: Lens<APIStore, StoreState> = (set, get, api, path) => {
-    const apiRoutes: State = {
-        '/api/data_example': defaultValue,
-    };
-
     return {
         ...apiRoutes,
         ...actions(set, get, api, path),

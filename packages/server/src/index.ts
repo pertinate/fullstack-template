@@ -7,37 +7,6 @@ import { APIResponseExample, Metadata, routingFactory } from '@local/types'
 import childProcess from 'child_process'
 import htmlParser from 'node-html-parser'
 
-class CustomExternalData<T> {
-    url: string
-    data: T | undefined
-    constructor(url: string) {
-        this.url = url
-    }
-}
-
-const test = {
-    data: undefined,
-    staleAt: 0,
-    loading: false,
-    error: false,
-    get getData() {
-        if (new Date().valueOf() > this.staleAt || this.staleAt == 0) {
-            this.loading = true
-            fetch('my/url')
-                .then(() => {
-                    //trigger update to this.data that would re-render whatever is using it
-                    this.staleAt = new Date().valueOf() + 1000 //maybe not correct way to implement
-                    this.loading = false
-                })
-                .catch(() => {
-                    this.loading = false
-                    this.error = true
-                })
-        }
-        return this.data
-    },
-}
-
 const defaultMeta: Metadata[] = [
     {
         tagName: 'title',
