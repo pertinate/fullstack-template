@@ -1,14 +1,20 @@
+import { memo } from 'react';
 import store from '../store/store';
 
 function Home() {
     const stor = store();
+
     console.log();
     return (
         <>
             twdtagfdfsgdf ::{' '}
-            {stor.api['/api/data_example'].loading
+            {/* {stor.api['/api/data'].loading
                 ? 'loading...'
-                : JSON.stringify(stor.api.get('/api/data_example'))}
+                : JSON.stringify(
+                      stor.api.get({
+                          url: '/api/data',
+                      }),
+                  )} */}
         </>
     );
 }

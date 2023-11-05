@@ -3,7 +3,13 @@ import Fastify from 'fastify'
 import fastifyStatic from '@fastify/static'
 import fs from 'fs'
 import path from 'path'
-import { APIResponseExample, Metadata, routingFactory } from '@local/types'
+import {
+    APIResponseExample,
+    Metadata,
+    backendRouting,
+    routingFactory,
+    test,
+} from '@local/types'
 import childProcess from 'child_process'
 import htmlParser from 'node-html-parser'
 
@@ -105,6 +111,14 @@ fastify.register(
                 console.error(error)
                 reply.code(500).send()
             }
+        })
+        fastify.get('/data', (req, reply) => {
+            console.log('hello')
+            reply.send(
+                backendRouting['/api/data']['resultSchema'].parse({
+                    world: 'hello',
+                }),
+            )
         })
         done()
     },
@@ -212,6 +226,7 @@ fastify.get('/sdfg', (req, res) => {
     res.header('Content-Type', 'text/html')
     return html.toString()
 })
+
 // Declare a route
 
 // Run the server!

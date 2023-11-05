@@ -6,13 +6,18 @@ export type APIResponseExample = {
 
 type METHODS = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
+export const test = [
+    '/api/data/:myParamOne/:myParamTwo?/:myParamThree',
+    '/api/data',
+] as const
+
 export enum APIRoutes {
     '/api/data/:myParamOne/:myParamTwo?/:myParamThree' = '/api/data/:myParamOne/:myParamTwo?/:myParamThree',
     '/api/data' = '/api/data',
 }
 
 export const backendRouting = {
-    [APIRoutes['/api/data/:myParamOne/:myParamTwo?/:myParamThree']]: {
+    [test[1]]: {
         paramSchema: z.object({
             myParamOne: z.string(),
             myParamTwo: z.string(),
@@ -29,9 +34,9 @@ export const backendRouting = {
             world: z.literal('hello'),
         }),
     },
-    [APIRoutes['/api/data']]: {
-        paramSchema: z.undefined(),
-        querySchema: z.undefined(),
+    [test[0]]: {
+        paramSchema: z.undefined().optional(),
+        querySchema: z.undefined().optional(),
         method: 'GET' as METHODS,
         bodySchema: z.undefined(),
         resultSchema: z.object({
@@ -42,47 +47,65 @@ export const backendRouting = {
 
 export type APIRouteName = keyof typeof backendRouting
 
-export const getFrontendAPIRoute = (key: APIRoutes) => {
+export const getFrontendAPIRoute = (key: (typeof test)[number]) => {
     const routing = backendRouting[key]
 
     return (
         params: z.infer<typeof routing.paramSchema>,
-        queries: z.infer<typeof routing.querySchema>,
+        queries: z.infer<typeof routing.querySchema>
     ) => {
         const furthestLeft = Object.keys(params || []).reduce((acc, next) => {
             acc = key.indexOf(`/:${next}`)
             return acc
         }, -1)
 
-        let base = key.slice(0, furthestLeft)
+        let base = furthestLeft > -1 ? key.slice(0, furthestLeft) : key
 
         if (base[base.length - 1] == '?') {
             base = key.slice(0, base.length - 1)
         }
-        const parsedParams = routing.paramSchema.parse(params)
-        const paramBuild = Object.keys(parsedParams || []).reduce(
-            (acc, next) => {
-                acc += `/${params?.[next as keyof typeof parsedParams]}`
-                return acc
-            },
-            '',
+
+        let builder = base
+        console.log(routing.paramSchema.isOptional())
+        if (routing.paramSchema.isOptional() == true) {
+            const parsedParams = routing.paramSchema.parse(params)
+            const paramBuild = Object.keys(parsedParams || []).reduce(
+                (acc, next) => {
+                    acc += `/${params?.[next as keyof typeof parsedParams]}`
+                    return acc
+                },
+                ''
+            )
+
+            builder += paramBuild
+        }
+
+        const url = new URL(
+            `${window.location.protocol}//${
+                window.location.hostname
+            }:${'8080'}${builder}`
         )
 
-        const url = new URL(`${base}${paramBuild}`)
+        console.log(url)
 
-        const parsedQueries = routing.querySchema.parse(queries)
-        if (parsedQueries) {
-            ;(
-                Object.keys(
-                    parsedQueries || [],
-                ) as (keyof typeof parsedQueries)[]
-            ).forEach(query => {
-                if (parsedQueries[query] == undefined) {
-                    return
-                }
+        if (routing.querySchema.isOptional() == true) {
+            const parsedQueries = routing.querySchema.parse(queries)
+            if (parsedQueries) {
+                ;(
+                    Object.keys(
+                        parsedQueries || []
+                    ) as (keyof typeof parsedQueries)[]
+                ).forEach(query => {
+                    if (parsedQueries[query] == undefined) {
+                        return
+                    }
 
-                url.searchParams.append(query, parsedQueries[query] as string) //typescript thinks it is still undefined when it is narrowed
-            })
+                    url.searchParams.append(
+                        query,
+                        parsedQueries[query] as string
+                    ) //typescript thinks it is still undefined when it is narrowed
+                })
+            }
         }
         return {
             url,

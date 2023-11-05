@@ -4,22 +4,29 @@ import { StoreState } from './store';
 import {
     APIResponseExample,
     APIRoutes,
+    backendRouting,
     getFrontendAPIRoute,
+    test,
 } from '@local/types';
+import { z } from 'zod';
 
 type APIState<T> = {
     data: T | undefined;
+    optimisticData: T | undefined;
     loading: boolean;
     error: Error | null;
+    isOptimistic?: boolean;
     ttl?: number;
     interval?: NodeJS.Timeout;
 };
 
 const defaultValue = {
     data: undefined,
+    optimisticData: undefined,
     ttl: 60000,
     loading: false,
     error: null,
+    isOptimistic: false,
 };
 
 const apiRoutes = {
@@ -30,9 +37,32 @@ const apiRoutes = {
 
 type State = typeof apiRoutes;
 
+export type APIIntake = {
+    url: (typeof test)[number];
+    body?: z.infer<
+        (typeof backendRouting)[(typeof test)[number]]['bodySchema']
+    >;
+    params?: z.infer<
+        (typeof backendRouting)[(typeof test)[number]]['paramSchema']
+    >;
+    query?: z.infer<
+        (typeof backendRouting)[(typeof test)[number]]['querySchema']
+    >;
+    cooldown?: number;
+};
+
+export type FetchDataIntake = APIIntake & {
+    test?: number;
+};
+
 export type Actions = {
-    fetchData: (url: APIRoutes) => void;
-    get: (url: APIRoutes) => urlOnly[keyof urlOnly]['data'];
+    fetchData: (data: FetchDataIntake) => void;
+    get: (data: APIIntake) => {
+        data: urlOnly[keyof urlOnly]['data'];
+        isLoading: urlOnly[keyof urlOnly]['loading'];
+        error: urlOnly[keyof urlOnly]['error'];
+        forceRefetch: () => void;
+    };
 };
 
 export type APIStore = State & Actions;
@@ -46,23 +76,23 @@ const actions: (
     path: ReadonlyArray<string>,
 ) => Actions = (set, get, api): Actions => {
     return {
-        fetchData: (url) => {
-            const apiRoute = getFrontendAPIRoute(url)(
-                {
-                    myParamOne: '',
-                    myParamTwo: '',
-                },
-                {},
-            );
+        fetchData: (data) => {
+            const key = data.url;
 
-            fetch(apiRoute.url)
+            const apiRoute = getFrontendAPIRoute(key)(data.params, data.query);
+            console.log(apiRoute);
+            fetch(apiRoute.url, {
+                method: apiRoute.method,
+                body: data.body ? JSON.stringify(data.body) : undefined,
+            })
                 .then((data) => {
                     const store = get();
-                    const storeData = store[url as keyof urlOnly];
+                    const storeData = store[key];
 
                     data.json().then((json) => {
+                        console.log(json);
                         set({
-                            [url]: {
+                            [key]: {
                                 ...storeData,
                                 data: json,
                                 loading: false,
@@ -73,9 +103,9 @@ const actions: (
                 })
                 .catch((error: Error) => {
                     const store = get();
-                    const storeData = store[url as keyof urlOnly];
+                    const storeData = store[key];
                     set({
-                        [url]: {
+                        [key]: {
                             ...storeData,
                             loading: false,
                             error,
@@ -83,16 +113,16 @@ const actions: (
                     });
                 });
         },
-        get: (url) => {
+        get: (data) => {
             const store = get();
-            const key = url;
+            const key = data.url;
             const storeData = store[key];
 
             if (!storeData.data && !storeData.loading) {
-                const storeData = get()[url];
+                const storeData = get()[key];
 
                 set({
-                    [url]: {
+                    [key]: {
                         ...storeData,
                         loading: true,
                         interval:
@@ -101,15 +131,22 @@ const actions: (
                                 ? undefined
                                 : !storeData.interval
                                 ? setInterval(
-                                      () => get().fetchData(url),
+                                      () => get().fetchData(data),
                                       storeData.ttl,
                                   )
                                 : storeData.interval,
                     },
                 });
-                get().fetchData(url);
+                console.log(data);
+                get().fetchData(data);
             }
-            return storeData.data;
+
+            return {
+                data: storeData.data,
+                isLoading: storeData.loading,
+                error: storeData.error,
+                forceRefetch: () => get().fetchData(data),
+            };
         },
     };
 };
