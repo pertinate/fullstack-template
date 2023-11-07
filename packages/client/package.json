@@ -33,6 +33,7 @@
         "class-variance-authority": "^0.7.0",
         "clsx": "^2.0.0",
         "dayjs": "^1.11.10",
+        "deep-equal": "^2.2.2",
         "embla-carousel-react": "^7.1.0",
         "localtypes": "*",
         "react": "^18.2.0",
@@ -45,6 +46,7 @@
     },
     "devDependencies": {
         "@local/types": "*",
+        "@types/deep-equal": "^1.0.3",
         "@types/react": "^18.0.37",
         "@types/react-dom": "^18.0.11",
         "@typescript-eslint/eslint-plugin": "^5.59.0",

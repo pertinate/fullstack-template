@@ -9,6 +9,7 @@ import {
     test,
 } from '@local/types';
 import { z } from 'zod';
+import deepEqual from 'deep-equal';
 
 type APIState<T> = {
     data: T | undefined;
@@ -18,15 +19,18 @@ type APIState<T> = {
     isOptimistic?: boolean;
     ttl?: number;
     interval?: NodeJS.Timeout;
+    retry?: number;
+    retryAt?: number;
 };
 
-const defaultValue = {
+const defaultValue: APIState<unknown> = {
     data: undefined,
     optimisticData: undefined,
     ttl: 60000,
     loading: false,
     error: null,
     isOptimistic: false,
+    retry: 5000,
 };
 
 const apiRoutes = {
@@ -48,7 +52,6 @@ export type APIIntake = {
     query?: z.infer<
         (typeof backendRouting)[(typeof test)[number]]['querySchema']
     >;
-    cooldown?: number;
 };
 
 export type FetchDataIntake = APIIntake & {
@@ -80,28 +83,44 @@ const actions: (
             const key = data.url;
 
             const apiRoute = getFrontendAPIRoute(key)(data.params, data.query);
-            console.log(apiRoute);
-            fetch(apiRoute.url, {
+            fetch(data.url, {
                 method: apiRoute.method,
                 body: data.body ? JSON.stringify(data.body) : undefined,
+                headers: {
+                    // 'Access-Control-Allow-Origin': '*',
+                    // Accept: 'application/json',
+                },
             })
                 .then((data) => {
                     const store = get();
                     const storeData = store[key];
-
+                    console.log(data);
                     data.json().then((json) => {
                         console.log(json);
-                        set({
-                            [key]: {
-                                ...storeData,
-                                data: json,
-                                loading: false,
-                                error: null,
-                            },
-                        });
+                        const isDifferent = !deepEqual(storeData.data, json);
+
+                        if (isDifferent) {
+                            set({
+                                [key]: {
+                                    ...storeData,
+                                    data: json,
+                                    loading: false,
+                                    error: null,
+                                },
+                            });
+                        } else {
+                            set({
+                                [key]: {
+                                    ...storeData,
+                                    loading: false,
+                                    error: null,
+                                },
+                            });
+                        }
                     });
                 })
                 .catch((error: Error) => {
+                    console.error(error);
                     const store = get();
                     const storeData = store[key];
                     set({
@@ -118,7 +137,12 @@ const actions: (
             const key = data.url;
             const storeData = store[key];
 
-            if (!storeData.data && !storeData.loading) {
+            const retry =
+                (storeData.retry &&
+                    (storeData.retryAt || 0 > new Date().valueOf())) ||
+                true;
+
+            if (!storeData.data && !storeData.loading && retry) {
                 const storeData = get()[key];
 
                 set({
@@ -135,9 +159,9 @@ const actions: (
                                       storeData.ttl,
                                   )
                                 : storeData.interval,
+                        retryAt: new Date().valueOf(),
                     },
                 });
-                console.log(data);
                 get().fetchData(data);
             }
 

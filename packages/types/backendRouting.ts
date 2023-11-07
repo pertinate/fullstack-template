@@ -16,8 +16,73 @@ export enum APIRoutes {
     '/api/data' = '/api/data',
 }
 
+// type MapResult<T extends z.ZodTypeAny> = {
+//     paramSchema: T
+//     querySchema: z.ZodTypeAny
+//     method: METHODS
+//     bodySchema: z.ZodTypeAny
+//     resultSchema: z.ZodTypeAny
+// }
+
+// type sdgfhb<T extends z.ZodTypeAny> = [
+//     (typeof test)[number],
+//     {
+//         paramSchema: T
+//         querySchema: z.ZodTypeAny
+//         method: METHODS
+//         bodySchema: z.ZodTypeAny
+//         resultSchema: z.ZodTypeAny
+//     }
+// ]
+
+// const leagsdf = [] satisfies sdgfhb<unknown>
+// const ttt = new Map<(typeof test)[number]>([
+//     [
+//         '/api/data',
+//         {
+//             paramSchema: z.undefined().optional(),
+//             querySchema: z.undefined().optional(),
+//             method: 'GET' as METHODS,
+//             bodySchema: z.undefined(),
+//             resultSchema: z.object({
+//                 world: z.literal('hello'),
+//             }),
+//         },
+//     ],
+//     [
+//         '/api/data/:myParamOne/:myParamTwo?/:myParamThree',
+//         {
+//             paramSchema: z.object({
+//                 myParamOne: z.string(),
+//                 myParamTwo: z.string(),
+//                 myParamThree: z.string().optional(),
+//             }),
+//             querySchema: z.object({
+//                 q: z.string().optional(),
+//             }),
+//             method: 'POST' as METHODS,
+//             bodySchema: z.object({
+//                 hello: z.literal('world'),
+//             }),
+//             resultSchema: z.object({
+//                 world: z.literal('hello'),
+//             }),
+//         },
+//     ],
+// ])
+
+// ttt.get('/api/data')
 export const backendRouting = {
     [test[1]]: {
+        paramSchema: z.undefined().optional(),
+        querySchema: z.undefined().optional(),
+        method: 'GET' as METHODS,
+        bodySchema: z.undefined(),
+        resultSchema: z.object({
+            world: z.literal('hello'),
+        }),
+    },
+    [test[0]]: {
         paramSchema: z.object({
             myParamOne: z.string(),
             myParamTwo: z.string(),
@@ -34,22 +99,13 @@ export const backendRouting = {
             world: z.literal('hello'),
         }),
     },
-    [test[0]]: {
-        paramSchema: z.undefined().optional(),
-        querySchema: z.undefined().optional(),
-        method: 'GET' as METHODS,
-        bodySchema: z.undefined(),
-        resultSchema: z.object({
-            world: z.literal('hello'),
-        }),
-    },
 } as const
 
 export type APIRouteName = keyof typeof backendRouting
 
 export const getFrontendAPIRoute = (key: (typeof test)[number]) => {
     const routing = backendRouting[key]
-
+    console.log(routing, key)
     return (
         params: z.infer<typeof routing.paramSchema>,
         queries: z.infer<typeof routing.querySchema>
@@ -66,7 +122,6 @@ export const getFrontendAPIRoute = (key: (typeof test)[number]) => {
         }
 
         let builder = base
-        console.log(routing.paramSchema.isOptional())
         if (routing.paramSchema.isOptional() == true) {
             const parsedParams = routing.paramSchema.parse(params)
             const paramBuild = Object.keys(parsedParams || []).reduce(
@@ -85,8 +140,6 @@ export const getFrontendAPIRoute = (key: (typeof test)[number]) => {
                 window.location.hostname
             }:${'8080'}${builder}`
         )
-
-        console.log(url)
 
         if (routing.querySchema.isOptional() == true) {
             const parsedQueries = routing.querySchema.parse(queries)
